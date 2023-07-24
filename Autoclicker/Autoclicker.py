@@ -18,14 +18,26 @@ def auto_click():#main fuction of the program
         mouse.click(button_type, 1)
         time.sleep(cps)
 
+def hold_click():#Hold input event
+    global is_active, button_type
+    mouse = Controller()
+    if is_active:
+        mouse.press(button_type)
+    else:
+        mouse.release(button_type)
+
 
 def on_pressed(key):
     global is_active
+    selected_inp = var.get()
     if key == Key.f7:
         if not is_active:
             print("auto click activated")
             is_active = True
             lbl_activate["text"] = "Activated"
+            if "Hold" in selected_inp:
+                start_hold_on_thread()
+                return
             
             start_click_on_thread()
             
@@ -33,6 +45,16 @@ def on_pressed(key):
             is_active = False
             print("decativated")
             lbl_activate["text"] = "Deactivated"
+            if "Hold" in selected_inp:
+                start_hold_on_thread()
+
+
+
+def start_hold_on_thread():
+    hold_thread = thread.Thread(target=hold_click)
+    hold_thread.daemon = True
+    hold_thread.start()
+
 
 def start_click_on_thread():
     auto_click_thread = thread.Thread(target=auto_click)
@@ -57,14 +79,16 @@ def update():#updates per provided ms
     cps = float(ent_cps.get())
 
 def switch_input(event):
-    global button_type
+    global button_type, is_active
     selected_value = var.get()
-    if selected_value == "Left":
+    if selected_value == "Left" or selected_value == "Hold Left":
         button_type = Button.left
-    elif selected_value == "Right":
+    elif selected_value == "Right" or selected_value == "Hold Right":
         button_type = Button.right
     else:
         button_type = Button.middle
+    is_active = False# this serves as a failsafe feature
+    lbl_activate["text"] = "Deactivated"
     print(f"type:{selected_value}")
 
 
@@ -111,7 +135,7 @@ btn_apply = tk.Button(master=frame_grid,relief="flat",text="Apply",command=cps_a
                       bg="gray20",fg="white")
 btn_apply.grid(column=2,row=2)
 
-options = ["Left","Right","Middle"]
+options = ["Left","Right","Middle","Hold Left", "Hold Right"]
 
 var = tk.StringVar(window)
 var.set(options[0])
